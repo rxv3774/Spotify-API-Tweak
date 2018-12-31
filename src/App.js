@@ -46,14 +46,15 @@ let fakeServerData = {
 class App extends Component {
   constructor() {
     super();
-    this.state = {serverData: {}}
+    this.state = {serverData: {},
+    filterString: ''
+  }
   }
   componentDidMount() {
     setTimeout(() => {
     this.setState({serverData: fakeServerData});
     },
     1000);
-
   }
   render() {
     let name = 'Ryan'
@@ -70,18 +71,50 @@ class App extends Component {
             <NumberOfPlaylists playlists={this.state.serverData.user.playlists}/>
             <NumberOfHours playlists={this.state.serverData.user.playlists}/>
 
-          <Filter/>
+          <Filter onTextChange={text=> this.setState({filterString: text})}/>
           {
-            this.state.serverData.user.playlists.map(playlist => 
+            this.state.serverData.user.playlists.filter(playlist => 
+              playlist.name.toLowerCase().includes(
+                this.state.filterString.toLowerCase())
+              ).map(playlist => 
               <Playlist playlist={playlist}/>
               )}
-          }
+
 
         </div> : <h1 style={setStyle}>Loading...</h1>
         }
       </div> //.map tranfers all elements from the array of playlists and pushes them 
             //into a new empty array and then returns them.
     );
+  }
+}
+
+
+class Filter extends Component {
+  render() {
+    return(
+      <div style={setStyle}>
+        <img/>
+        <input type="text" onKeyUp={
+          event => this.props.onTextChange(event.target.value)
+          }/>
+      </div>
+    )
+  }
+}
+
+class Playlist extends Component {
+  render() {
+    let playlist = this.props.playlist
+    return (
+      <div style={{...setStyle, width: '30%', display: 'inline-block'}}>
+        <img />
+        <h3>{playlist.name}</h3>
+        <ul>
+          {playlist.songs.map(song => <li>{song.name}</li>)}
+        </ul>
+      </div>
+    )
   }
 }
 
@@ -107,32 +140,6 @@ class NumberOfHours extends Component {
       <div style={{width: "50%", display: 'inline-block'}}>
         <h2 style = {setStyle}> {totalDuration/1000/60/60} hours </h2>
       </div> //Math.floor or Math.round if you want to remove decimals
-    )
-  }
-}
-
-class Filter extends Component {
-  render() {
-    return(
-      <div style={setStyle}>
-        <img/>
-        <input type="text"/>
-      </div>
-    )
-  }
-}
-
-class Playlist extends Component {
-  render() {
-    let playlist = this.props.playlist
-    return (
-      <div style={{...setStyle, width: '30%', display: 'inline-block'}}>
-        <img />
-        <h3>{playlist.name}</h3>
-        <ul>
-          {playlist.songs.map(song => <li>{song.name}</li>)}
-        </ul>
-      </div>
     )
   }
 }
