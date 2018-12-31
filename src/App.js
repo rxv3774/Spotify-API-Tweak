@@ -10,32 +10,32 @@ let fakeServerData = {
         name: 'My go-to playlist',
         songs: [
           {name: 'Photograph', duration: 150000}, 
-          {name: 'Come Through and Chill', duration: 150000}, 
+          {name: 'Motiv8', duration: 150000}, 
           {name: 'KOD', duration: 150000}
         ]
       },
       {
         name: 'Jam Out',
         songs: [
-        {name: 'Photograph', duration: 150000}, 
-        {name: 'Come Through and Chill', duration: 150000}, 
-        {name: 'KOD', duration: 150000}
+        {name: 'Solita', duration: 150000}, 
+        {name: 'Te bote', duration: 150000}, 
+        {name: 'Soy peor', duration: 150000}
       ]
       },
       {
         name: 'Vibes',
         songs: [
-        {name: 'Photograph', duration: 150000}, 
-        {name: 'Come Through and Chill', duration: 150000}, 
-        {name: 'KOD', duration: 150000}
+        {name: 'Navajo', duration: 150000}, 
+        {name: 'Tadow', duration: 150000}, 
+        {name: 'Kevins Hart', duration: 150000}
       ]
       },
       {
         name: 'Working-Out',
         songs: [
-        {name: 'Photograph', duration: 150000}, 
-        {name: 'Come Through and Chill', duration: 150000}, 
-        {name: 'KOD', duration: 150000}
+        {name: 'Run', duration: 150000}, 
+        {name: 'Swervin', duration: 150000}, 
+        {name: 'ATM', duration: 150000}
       ]
       }
     ]
@@ -71,12 +71,16 @@ class App extends Component {
             <NumberOfHours playlists={this.state.serverData.user.playlists}/>
 
           <Filter/>
-          <Playlist/>
-          <Playlist/>
-          <Playlist/>
+          {
+            this.state.serverData.user.playlists.map(playlist => 
+              <Playlist playlist={playlist}/>
+              )}
+          }
+
         </div> : <h1 style={setStyle}>Loading...</h1>
         }
-      </div>
+      </div> //.map tranfers all elements from the array of playlists and pushes them 
+            //into a new empty array and then returns them.
     );
   }
 }
@@ -102,7 +106,7 @@ class NumberOfHours extends Component {
     return (
       <div style={{width: "50%", display: 'inline-block'}}>
         <h2 style = {setStyle}> {totalDuration/1000/60/60} hours </h2>
-      </div> //Math.floor if you want to remove decimals
+      </div> //Math.floor or Math.round if you want to remove decimals
     )
   }
 }
@@ -120,11 +124,14 @@ class Filter extends Component {
 
 class Playlist extends Component {
   render() {
+    let playlist = this.props.playlist
     return (
       <div style={{...setStyle, width: '30%', display: 'inline-block'}}>
         <img />
-        <h3>Playlist Name</h3>
-        <ul><li>Song 1</li><li>Song 2</li><li>Song 3</li></ul>
+        <h3>{playlist.name}</h3>
+        <ul>
+          {playlist.songs.map(song => <li>{song.name}</li>)}
+        </ul>
       </div>
     )
   }
