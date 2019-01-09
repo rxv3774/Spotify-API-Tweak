@@ -3,76 +3,137 @@ import './App.css';
 import queryString from 'query-string'
 import SpotifyWebApi from 'spotify-web-api-js'
 import $ from 'jquery'
-import { promised } from 'q';
+import { promised, when } from 'q';
 
 const spotifyApi = new SpotifyWebApi();
 
 let setStyle = {color: '#fff'};
-// let fakeServerData = {
-//   user: {
-//     name: 'Ryan',
-//     playlists: [
-//       {
-//         name: 'My go-to playlist',
-//         songs: [
-//           {name: 'Photograph', duration: 150000}, 
-//           {name: 'Motiv8', duration: 150000}, 
-//           {name: 'KOD', duration: 150000}
-//         ]
-//       },
-//       {
-//         name: 'Jam Out',
-//         songs: [
-//         {name: 'Solita', duration: 150000}, 
-//         {name: 'Te bote', duration: 150000}, 
-//         {name: 'Soy peor', duration: 150000}
-//       ]
-//       },
-//       {
-//         name: 'Vibes',
-//         songs: [
-//         {name: 'Navajo', duration: 150000}, 
-//         {name: 'Tadow', duration: 150000}, 
-//         {name: 'Kevins Hart', duration: 150000}
-//       ]
-//       },
-//       {
-//         name: 'Working-Out',
-//         songs: [
-//         {name: 'Run', duration: 150000}, 
-//         {name: 'Swervin', duration: 150000}, 
-//         {name: 'ATM', duration: 150000}
-//       ]
-//       }
-//     ]
-//   }
-// };
-
 
 class App extends Component {
   
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {serverData: {},
     filterString: ''
     }
-    let apiUrl = 'https://api.spotify.com/v1'
-    let artistName;
 
+    this.form = React.createRef
+    this.search = React.createRef
+    this.submit = React.createRef
+    
+    let apiUrl = 'https://api.spotify.com/v1'
+    let api_artist_url = 'https://api.spotify.com/v1/search?q=Daft+Punk&type=artist'
+
+    this.test = this.test.bind(this)
+    this.searchArtist = this.searchArtist.bind(this)
+  }
+
+  test() {
+    let parsed = queryString.parse(window.location.search)
+    let accessToken = parsed.access_token
+
+    document.getElementById('search-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      let artists = document.getElementById('query').value
+      artists = artists.split(',') //parses through input
+
+
+      let artistSearch = artists.map(artistName => 
+        $.ajax({
+          url: 'https://api.spotify.com/v1/search',
+          headers: {'Authorization': 'Bearer ' + accessToken},
+          method:'GET',
+          dataType: 'json',
+          data: {
+            q: artistName,
+            type: 'artist'
+          }
+        })
+      )
+
+      let allTracks = []
+      $.when(...artistSearch).then((...artist) => {
+        artist = artist.map(artistInfo => artistInfo[0].artists.items[0].id)
+        .map(artistId => 
+          
+          $.ajax({
+            url: 'https://api.spotify.com/v1/artists/'.concat(artistId,'/top-tracks'),
+            headers: {'Authorization': 'Bearer ' + accessToken},
+            method:'GET',
+            dataType: 'json',
+            data: {
+              country: 'US',
+              type: 'artist'
+            }
+          })
+
+  
+        )
+
+        $.when(...artist).then((...tracks) => {
+          tracks = tracks.map(topTracks => topTracks[0].tracks) //obtains multiple arrays of top tracks
+          tracks = tracks.reduce((previous, current) => [...previous, ...current], []) //flattens multiple arrays into one array
+          console.log(tracks)
+        })
+     
+      })
+      }, false);
+  }
+
+  searchArtist(artistName) { 
+    let parsed = queryString.parse(window.location.search)
+    let accessToken = parsed.access_token
+    $.ajax({
+      url: 'https://api.spotify.com/v1/search',
+      headers: {'Authorization': 'Bearer ' + accessToken},
+      method:'GET',
+      dataType: 'json',
+      data: {
+        q: artistName,
+        type: 'artist'
+      }
+    })
+  }
+
+  getArtistTopTracks(artistId) {
+    let parsed = queryString.parse(window.location.search)
+    let accessToken = parsed.access_token
+    $.ajax({
+      url: 'https://api.spotify.com/v1/artists/'.concat(artistId,'/top-tracks'),
+      headers: {'Authorization': 'Bearer ' + accessToken},
+      method:'GET',
+      dataType: 'json',
+      data: {
+        country: 'US',
+        type: 'artist'
+      }
+    })
+  }
+
+  buildPlaylist(tracks) {
+    let parsed = queryString.parse(window.location.search)
+    let accessToken = parsed.access_token
+    $.when(...tracks).then(userID =>
+      $.ajax({
+        url: 'https://api.spotify.com/v1/users/'.concat(userID,'/playlists'),
+        headers: {'Authorization': 'Bearer ' + accessToken},
+        method:'GET',
+        dataType: 'json',
+        data: {
+          country: 'US',
+          type: 'artist'
+        }
+      })
+
+    )
   }
 
   componentDidMount() {
      let parsed = queryString.parse(window.location.search)
-    //  if(parsed.access_token) {
-    //    spotifyApi.setAccessToken(parsed.access_token)
-    //  }
-    //  else {
-    //    return;
-    //  }
      let accessToken = parsed.access_token
 
      if(!accessToken) 
-       return; //FIX UP
+       return;
      
      fetch('https://api.spotify.com/v1/me', {
        headers: {'Authorization': 'Bearer ' + accessToken}
@@ -108,8 +169,8 @@ class App extends Component {
         return playlists
       })
       return playlistPromise
-    })
-    .then(playlists => 
+      })
+      .then(playlists => 
         this.setState({
             playlists: playlists.map(item => {
               return {
@@ -120,39 +181,8 @@ class App extends Component {
             })
         })
       )
-
-      // fetch('https://api.spotify.com/v1/artists/search', {
-      //   headers: {'Authorization': 'Bearer ' + accessToken}
-      // }).then((response) => 
-      // response.json()).then(data => 
-      //   this.setState({
-      //     artists: data.items.map(item => {
-      //       return {
-      //         artistName: item.name,
-
-      //       }
-      //     })
-      //   }))
-        
-      
-}
-
-
-// getArtists() {
-//   (artistName) => {
-//     $.ajax({
-//       url: 'https://api.spotify.com/v1/search',
-//       method: 'GET',
-//       datatype: 'json',
-//       data: {
-//         q: artistName
-//       }
-//     })
-//   }
-// }
-  getArtistTopTracks(artistName) {
-    //spotifyApi.artists.
   }
+
   render() {
     let playlistsToRender = this.state.user && this.state.playlists ? 
     this.state.playlists.filter(playlist => 
@@ -163,9 +193,10 @@ class App extends Component {
     return (
       
       <div className="App">
+
         {this.state.user ?
         <div>
-          <h1 style={{...setStyle, 'font-size': '50px'}}>
+          <h1 style={{...setStyle, 'fontSize': '50px'}}>
           {this.state.user.name}'s Playlists
 
           </h1>
@@ -177,10 +208,10 @@ class App extends Component {
               <Playlist playlist={playlist}/>
               )}
 
-          <div class="form">
+          <div className="form" id="search-form" ref={this.form}>
               <form action="">
-                <input type="search" id="searchBar" value=""/>
-                <button type="button" value="submit" onClick=""/>
+                <input type="search" id="query" ref = {this.search} value={this.search.val}/>
+                <input type="submit" id="but" ref={this.submit} value="Create" onClick={this.test}/>
               </form>
           </div>
 
@@ -189,7 +220,7 @@ class App extends Component {
           'http://localhost:8888/login' : 'https://more-features-backend.herokuapp.com/login'
         }
       }
-         style={{padding: '10px', 'font-size': '30px', 'margin-top': '20px'}}>Login With Spotify</button>
+         style={{padding: '10px', 'fontSize': '30px', 'marginTop': '20px'}}>Login With Spotify</button>
         }
       </div> //.map tranfers all elements from the array of playlists and pushes them 
             //into a new empty array and then returns them.
