@@ -3,7 +3,6 @@ import './App.css';
 import queryString from 'query-string'
 import SpotifyWebApi from 'spotify-web-api-js'
 import $ from 'jquery'
-import { promised, when } from 'q';
 
 const spotifyApi = new SpotifyWebApi();
 
@@ -24,10 +23,14 @@ class App extends Component {
     
     let apiUrl = 'https://api.spotify.com/v1'
     let api_artist_url = 'https://api.spotify.com/v1/search?q=Daft+Punk&type=artist'
+    //let playlistExternalUrl = 'https://open.spotify.com/playlist/'
+
 
     this.test = this.test.bind(this)
     this.searchArtist = this.searchArtist.bind(this)
+    //this.playlistExternalUrl = this.props.playlistExternalUrl
   }
+
 
   test() {
     let parsed = queryString.parse(window.location.search)
@@ -39,8 +42,8 @@ class App extends Component {
       artists = artists.split(',') //parses through input
 
 
-      let artistSearch = artists.map(artistName => //search for artist objects
-        $.ajax({
+      let artistSearch = artists.map(artistName => 
+        $.ajax({ //search for artist objects
           url: 'https://api.spotify.com/v1/search',
           headers: {'Authorization': 'Bearer ' + accessToken},
           method:'GET',
@@ -54,9 +57,9 @@ class App extends Component {
 
       $.when(...artistSearch).then((...artist) => {
         artist = artist.map(artistInfo => artistInfo[0].artists.items[0].id) //gets artist ids
-        .map(artistId => //gets artists top-tracks
+        .map(artistId => 
           
-          $.ajax({
+          $.ajax({ //gets artists top-tracks
             url: 'https://api.spotify.com/v1/artists/'.concat(artistId,'/top-tracks'),
             headers: {'Authorization': 'Bearer ' + accessToken},
             method:'GET',
@@ -73,7 +76,7 @@ class App extends Component {
           tracks = tracks.map(topTracks => topTracks[0].tracks) //obtains multiple arrays of top tracks
           tracks = tracks.reduce((previous, current) => [...previous, ...current], []).map(item => item.uri) //flattens multiple arrays into one array
 
-          let userInfo = $.ajax({
+          let userInfo = $.ajax({ //obtains the user's information(name, email, id, etc...) 
             url: 'https://api.spotify.com/v1/me',
             headers: {'Authorization': 'Bearer ' + accessToken},
             method:'GET',
@@ -97,19 +100,19 @@ class App extends Component {
 
             $.when(newPlayist).then((...results) => {
               let playlistId = results[0].id
-
-              $.ajax({ //creates a new empty private playlist
+              let playlistExternalUrl = 'https://open.spotify.com/playlist/'.concat(playlistId)
+              $.ajax({ //inserts top-tracks into empty playlist
                 url: 'https://api.spotify.com/v1/playlists/'.concat(playlistId,'/tracks'),
                 headers: {'Authorization': 'Bearer ' + accessToken,
                 'Content-Type': 'application/json'},
                 method:'POST',
                 dataType: 'json',
                 data: JSON.stringify({
-                  uris: tracks
+                  uris: tracks //a comma separated array of all the track uris
                 })
-
               })
 
+              //$(this.playlist).html(<iframe src="https://open.spotify.com/embed/user/ryanpro2008/playlist/5tkn7BbZIV8wrL1aiXbVpA" height='400'></iframe>)
             })
 
           })
@@ -177,6 +180,21 @@ class App extends Component {
       data: JSON.stringify({
         name: 'My new playlist',
         public: 'false'
+      })
+    })
+  }
+
+  insertTopTracks(trackURIS, playlist_id) {
+    let parsed = queryString.parse(window.location.search)
+    let accessToken = parsed.access_token
+    $.ajax({
+      url: 'https://api.spotify.com/v1/playlists/'.concat(playlist_id,'/tracks'),
+      headers: {'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'},
+      method:'POST',
+      dataType: 'json',
+      data: JSON.stringify({
+        uris: trackURIS
       })
     })
   }
@@ -269,8 +287,8 @@ class App extends Component {
                 <input type="submit" id="but" ref={this.submit} value="Create" onClick={this.test}/>
               </form>
           </div>
-          <div className="playlist" ref={this.playlist}>
-
+          <div className="playlist" id ="play" ref={this.playlist}>
+            
           </div>
 
         </div> : <button onClick = {() => {
