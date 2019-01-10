@@ -3,13 +3,6 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import $ from 'jquery'
-
-$("button").click(function(){
-    $.get("demo_test.asp", function(data, status){
-        alert("Data: " + data + "\nStatus: " + status);
-    });
-});
 
 ReactDOM.render(<App />, document.getElementById('root'));
 

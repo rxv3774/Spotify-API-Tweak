@@ -20,6 +20,7 @@ class App extends Component {
     this.form = React.createRef
     this.search = React.createRef
     this.submit = React.createRef
+    this.playlist = React.createRef
     
     let apiUrl = 'https://api.spotify.com/v1'
     let api_artist_url = 'https://api.spotify.com/v1/search?q=Daft+Punk&type=artist'
@@ -38,7 +39,7 @@ class App extends Component {
       artists = artists.split(',') //parses through input
 
 
-      let artistSearch = artists.map(artistName => 
+      let artistSearch = artists.map(artistName => //search for artist objects
         $.ajax({
           url: 'https://api.spotify.com/v1/search',
           headers: {'Authorization': 'Bearer ' + accessToken},
@@ -51,10 +52,9 @@ class App extends Component {
         })
       )
 
-      let allTracks = []
       $.when(...artistSearch).then((...artist) => {
-        artist = artist.map(artistInfo => artistInfo[0].artists.items[0].id)
-        .map(artistId => 
+        artist = artist.map(artistInfo => artistInfo[0].artists.items[0].id) //gets artist ids
+        .map(artistId => //gets artists top-tracks
           
           $.ajax({
             url: 'https://api.spotify.com/v1/artists/'.concat(artistId,'/top-tracks'),
@@ -66,16 +66,57 @@ class App extends Component {
               type: 'artist'
             }
           })
-
-  
         )
+
 
         $.when(...artist).then((...tracks) => {
           tracks = tracks.map(topTracks => topTracks[0].tracks) //obtains multiple arrays of top tracks
-          tracks = tracks.reduce((previous, current) => [...previous, ...current], []) //flattens multiple arrays into one array
-          console.log(tracks)
+          tracks = tracks.reduce((previous, current) => [...previous, ...current], []).map(item => item.uri) //flattens multiple arrays into one array
+
+          let userInfo = $.ajax({
+            url: 'https://api.spotify.com/v1/me',
+            headers: {'Authorization': 'Bearer ' + accessToken},
+            method:'GET',
+            dataType: 'json',
+          })
+
+          $.when(userInfo).then((...results) => {
+            let userId = results[0].id //obtains the spotify user id
+
+            let newPlayist = $.ajax({ //creates a new empty private playlist
+              url: 'https://api.spotify.com/v1/users/'.concat(userId,'/playlists'),
+              headers: {'Authorization': 'Bearer ' + accessToken,
+              'Content-Type': 'application/json'},
+              method:'POST',
+              dataType: 'json',
+              data: JSON.stringify({
+                name: 'My new playlist',
+                public: 'false'
+              })
+            })
+
+            $.when(newPlayist).then((...results) => {
+              let playlistId = results[0].id
+
+              $.ajax({ //creates a new empty private playlist
+                url: 'https://api.spotify.com/v1/playlists/'.concat(playlistId,'/tracks'),
+                headers: {'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'},
+                method:'POST',
+                dataType: 'json',
+                data: JSON.stringify({
+                  uris: tracks
+                })
+
+              })
+
+            })
+
+          })
+          
         })
-     
+
+
       })
       }, false);
   }
@@ -110,22 +151,34 @@ class App extends Component {
     })
   }
 
-  buildPlaylist(tracks) {
+  flattenTopTracks(artist) {
+    $.when(...artist).then((...tracks) => {
+      tracks = tracks.map(topTracks => topTracks[0].tracks) //obtains multiple arrays of top tracks
+      tracks = tracks.reduce((previous, current) => [...previous, ...current], []) //flattens multiple arrays into one array
+    })
+  }
+
+  getUserId(userinfo) {
+    $.when(userinfo).then((...results) => {
+      let id = results[0].id
+      return id
+    })
+  }
+
+  buildPlaylist(userid) {
     let parsed = queryString.parse(window.location.search)
     let accessToken = parsed.access_token
-    $.when(...tracks).then(userID =>
-      $.ajax({
-        url: 'https://api.spotify.com/v1/users/'.concat(userID,'/playlists'),
-        headers: {'Authorization': 'Bearer ' + accessToken},
-        method:'GET',
-        dataType: 'json',
-        data: {
-          country: 'US',
-          type: 'artist'
-        }
+    $.ajax({
+      url: 'https://api.spotify.com/v1/users/'.concat(userid,'/playlists'),
+      headers: {'Authorization': 'Bearer ' + accessToken,
+      'Content-Type': 'application/json'},
+      method:'POST',
+      dataType: 'json',
+      data: JSON.stringify({
+        name: 'My new playlist',
+        public: 'false'
       })
-
-    )
+    })
   }
 
   componentDidMount() {
@@ -141,7 +194,9 @@ class App extends Component {
         response.json()).then(data => 
           this.setState({
             user: {
-              name: data.display_name}
+              name: data.display_name,
+              id: data.id
+            }
           })
         )
 
@@ -213,6 +268,9 @@ class App extends Component {
                 <input type="search" id="query" ref = {this.search} value={this.search.val}/>
                 <input type="submit" id="but" ref={this.submit} value="Create" onClick={this.test}/>
               </form>
+          </div>
+          <div className="playlist" ref={this.playlist}>
+
           </div>
 
         </div> : <button onClick = {() => {
