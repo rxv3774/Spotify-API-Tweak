@@ -1,10 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import queryString from 'query-string'
-import SpotifyWebApi from 'spotify-web-api-js'
 import $ from 'jquery'
-
-const spotifyApi = new SpotifyWebApi();
 
 let setStyle = {color: '#fff'};
 
@@ -264,7 +261,7 @@ class App extends Component {
 
         {this.state.user ?
         <div>
-          <h1 style={{...setStyle, 'fontSize': '50px'}}>
+          <h1 style={{...setStyle, 'fontSize': '50px', padding: '10px'}}>
           {this.state.user.name}'s Playlists
 
           </h1>
@@ -275,6 +272,8 @@ class App extends Component {
             playlistsToRender.map(playlist => 
               <Playlist playlist={playlist}/>
               )}
+
+          <h2 style={{...setStyle, 'fontSize': '20px'}}>Welcome to Ryan's playlist generator. To create a playlist, input 2-10 artist names(comma seperated) and press create!</h2>
 
           <div className="form" id="search-form" ref={this.form}>
               <form action="">

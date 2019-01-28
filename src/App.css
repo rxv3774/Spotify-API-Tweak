@@ -1,15 +1,31 @@
+:root {
+  /* Colors */
+
+  --green: rgb(30, 215, 96);
+  --light-black: rgb(40, 40, 40);
+  --black: rgb(24, 24, 24);
+  --grey: rgb(170, 170, 170);
+  --sand: rgb(200, 200, 200);
+  --white: rgb(255, 255, 255);
+  --blue: #4688d7;
+}
+
 html, body {
   background-color: #282c34;
-  padding: 10px;
+  padding: 30px;
+}
+
+body {
+  background: var(--black);
+  font-family: 'Roboto', sans-serif;    
+}
+
+div {
+   padding: 15px;
 }
 
 .App {
   text-align: center;
-}
-
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
 }
 
 .App-header {
@@ -22,18 +38,3 @@ html, body {
   font-size: calc(10px + 2vmin);
   color: white;
 }
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
